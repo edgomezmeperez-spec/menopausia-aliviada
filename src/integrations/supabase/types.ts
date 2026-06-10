@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_entries: {
+        Row: {
+          bloating: number
+          created_at: string
+          energy: number
+          entry_date: string
+          id: string
+          notes: string | null
+          sleep: number
+          updated_at: string
+          user_id: string
+          woke_2_4am: boolean
+        }
+        Insert: {
+          bloating: number
+          created_at?: string
+          energy: number
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          sleep: number
+          updated_at?: string
+          user_id: string
+          woke_2_4am?: boolean
+        }
+        Update: {
+          bloating?: number
+          created_at?: string
+          energy?: number
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          sleep?: number
+          updated_at?: string
+          user_id?: string
+          woke_2_4am?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
