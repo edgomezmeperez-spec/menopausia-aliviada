@@ -23,12 +23,11 @@ async function callGateway(opts: { system?: string; prompt?: string; messages?: 
   const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
   const { generateText } = await import("ai");
   const gateway = createLovableAiGatewayProvider(key);
-  const result = await generateText({
-    model: gateway("google/gemini-3-flash-preview"),
-    system: opts.system,
-    prompt: opts.prompt,
-    messages: opts.messages,
-  });
+  const base: any = { model: gateway("google/gemini-3-flash-preview") };
+  if (opts.system) base.system = opts.system;
+  if (opts.messages) base.messages = opts.messages;
+  else if (opts.prompt) base.prompt = opts.prompt;
+  const result = await generateText(base);
   return result.text;
 }
 
