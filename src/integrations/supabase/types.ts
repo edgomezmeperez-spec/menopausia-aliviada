@@ -53,6 +53,74 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendation_followups: {
+        Row: {
+          created_at: string
+          feeling: string | null
+          followed: string
+          id: string
+          recommendation_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feeling?: string | null
+          followed: string
+          id?: string
+          recommendation_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feeling?: string | null
+          followed?: string
+          id?: string
+          recommendation_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_followups_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: true
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendations: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          for_date: string
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          for_date?: string
+          id?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          for_date?: string
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

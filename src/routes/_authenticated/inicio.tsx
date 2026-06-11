@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { LogOut, Sparkles, Flame, TrendingUp, Moon, Zap, Wind } from "lucide-react";
+import { LogOut, Sparkles, Flame, TrendingUp, Moon, Zap, Wind, Lightbulb, RefreshCw, CheckCircle2, HelpCircle } from "lucide-react";
+import { generarConsejoHoy, obtenerSeguimientoPendiente, responderSeguimiento } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
@@ -77,6 +79,16 @@ function InicioPage() {
   const [history, setHistory] = useState<Entry[]>([]);
   const [savedToday, setSavedToday] = useState(false);
 
+  // Consejo de hoy
+  const consejoFn = useServerFn(generarConsejoHoy);
+  const seguimientoFn = useServerFn(obtenerSeguimientoPendiente);
+  const responderFn = useServerFn(responderSeguimiento);
+  const [consejo, setConsejo] = useState<{ id: string; content: string; category: string } | null>(null);
+  const [loadingConsejo, setLoadingConsejo] = useState(false);
+  const [pendiente, setPendiente] = useState<{ id: string; content: string } | null>(null);
+  const [lastFollowup, setLastFollowup] = useState<{ recommendation: { content: string }; followup: { followed: string; feeling: string | null } } | null>(null);
+  const [followedAnswer, setFollowedAnswer] = useState<"si" | "parcial" | "no" | null>(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? "";
@@ -101,6 +113,18 @@ function InicioPage() {
           setSavedToday(true);
         }
       });
+
+    // Cargar consejo de hoy y seguimiento pendiente en paralelo
+    consejoFn({ data: { force: false } })
+      .then(res => setConsejo(res.recommendation as any))
+      .catch(() => { /* silencioso, mostramos botón manual */ });
+
+    seguimientoFn({ data: {} })
+      .then(res => {
+        if (res.pending) setPendiente(res.pending as any);
+        else if (res.lastFollowup) setLastFollowup(res.lastFollowup as any);
+      })
+      .catch(() => {});
   }, []);
 
   const streak = useMemo(() => {
@@ -152,6 +176,31 @@ function InicioPage() {
   async function signOut() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
+  }
+
+  async function regenerarConsejo() {
+    setLoadingConsejo(true);
+    try {
+      const res = await consejoFn({ data: { force: true } });
+      setConsejo(res.recommendation as any);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoadingConsejo(false);
+    }
+  }
+
+  async function enviarSeguimiento(feeling: "mucho_mejor" | "algo_mejor" | "igual" | "peor" | null) {
+    if (!pendiente || !followedAnswer) return;
+    try {
+      await responderFn({ data: { recommendationId: pendiente.id, followed: followedAnswer, feeling } });
+      toast.success("¡Gracias por contarnos!");
+      setLastFollowup({ recommendation: { content: pendiente.content }, followup: { followed: followedAnswer, feeling } });
+      setPendiente(null);
+      setFollowedAnswer(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    }
   }
 
   const hour = new Date().getHours();
@@ -212,6 +261,101 @@ function InicioPage() {
           <p className="mt-1 text-[11px] text-muted-foreground">{wokeUp ? "Despertaste 2-4 AM" : "Sin despertares 2-4 AM"}</p>
         </Card>
       </div>
+
+      {/* Seguimiento de recomendaciones de ayer */}
+      {pendiente && (
+        <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]" style={{ background: "var(--gradient-warm)" }}>
+          <div className="mb-3 flex items-start gap-3">
+            <div className="rounded-full bg-primary/10 p-2">
+              <HelpCircle className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-foreground">¿Probaste la recomendación de ayer?</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">"{pendiente.content}"</p>
+            </div>
+          </div>
+          {!followedAnswer ? (
+            <div className="grid grid-cols-3 gap-2">
+              {([["si", "Sí"], ["parcial", "Parcialmente"], ["no", "No"]] as const).map(([val, lbl]) => (
+                <Button
+                  key={val}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    if (val === "no") {
+                      // si dice no, no preguntamos feeling
+                      setFollowedAnswer(val);
+                      enviarSeguimiento(null);
+                    } else {
+                      setFollowedAnswer(val);
+                    }
+                  }}
+                >{lbl}</Button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p className="mb-2 text-xs font-medium text-foreground">¿Cómo te sentiste?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["mucho_mejor", "Mucho mejor"],
+                  ["algo_mejor", "Algo mejor"],
+                  ["igual", "Igual"],
+                  ["peor", "Peor"],
+                ] as const).map(([val, lbl]) => (
+                  <Button key={val} variant="outline" size="sm" className="rounded-full" onClick={() => enviarSeguimiento(val)}>{lbl}</Button>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+      )}
+
+      {/* Consejo de hoy */}
+      <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+              <Lightbulb className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-sm font-semibold">Consejo de hoy</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={regenerarConsejo} disabled={loadingConsejo} aria-label="Regenerar">
+            <RefreshCw className={`h-4 w-4 ${loadingConsejo ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        {consejo ? (
+          <p className="text-sm leading-relaxed text-foreground">{consejo.content}</p>
+        ) : (
+          <Button onClick={regenerarConsejo} disabled={loadingConsejo} variant="outline" className="w-full rounded-full">
+            {loadingConsejo ? "Generando..." : "Generar consejo personalizado"}
+          </Button>
+        )}
+        <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">Orientación general de bienestar. No reemplaza la atención médica profesional.</p>
+      </Card>
+
+      {/* Seguimiento - último resultado */}
+      {lastFollowup && (
+        <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]">
+          <div className="mb-2 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-primary" />
+            <p className="text-sm font-semibold">Seguimiento de recomendaciones</p>
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">Último consejo:</p>
+          <p className="mt-1 text-sm text-foreground">"{lastFollowup.recommendation.content}"</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <span className="rounded-full bg-muted px-2.5 py-1 font-medium">
+              {lastFollowup.followup.followed === "si" ? "✓ Realizado" : lastFollowup.followup.followed === "parcial" ? "◐ Parcialmente" : "✗ No realizado"}
+            </span>
+            {lastFollowup.followup.feeling && (
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
+                {({ mucho_mejor: "Te sentiste mucho mejor", algo_mejor: "Te sentiste algo mejor", igual: "Te sentiste igual", peor: "Te sentiste peor" } as Record<string, string>)[lastFollowup.followup.feeling]}
+              </span>
+            )}
+          </div>
+        </Card>
+      )}
 
       <div className="flex items-center gap-2 pt-2">
         <Sparkles className="h-4 w-4 text-primary" />
