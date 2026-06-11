@@ -76,6 +76,7 @@ function HistorialPage() {
     return { energyDiff, bloatDiff, wakeNights: wakeEntries.length };
   }, [entries]);
 
+  const hasEnoughData = entries.length >= 7;
   const wakeCount = entries.filter(e => e.woke_2_4am).length;
 
   async function runInsights() {
@@ -114,8 +115,25 @@ function HistorialPage() {
         </Card>
       ) : (
         <>
-          {/* Trend chips */}
-          {trends && (
+          {!hasEnoughData && (
+            <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]" style={{ background: "var(--gradient-warm)" }}>
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 text-sm text-foreground">
+                  <p className="font-semibold">Aún estamos conociéndote</p>
+                  <p className="mt-1 leading-relaxed text-muted-foreground">
+                    Necesitamos más información para detectar patrones confiables. Continúa registrando tus síntomas diariamente y volveremos a analizar tus tendencias cuando tengamos suficientes datos.
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-primary">{entries.length} de 7 registros mínimos</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Trend chips — only with enough data */}
+          {hasEnoughData && trends && (
             <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tendencias automáticas</p>
               <div className="grid grid-cols-3 gap-3">
@@ -126,22 +144,22 @@ function HistorialPage() {
             </Card>
           )}
 
-          {/* Pattern detection */}
-          {pattern && (
+          {/* Pattern detection — only with enough data */}
+          {hasEnoughData && pattern && (
             <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]" style={{ background: "var(--gradient-warm)" }}>
               <div className="flex items-start gap-3">
                 <div className="rounded-full bg-primary/10 p-2">
                   <Sparkles className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1 space-y-2 text-sm">
-                  <p className="font-semibold text-foreground">Patrón detectado</p>
+                  <p className="font-semibold text-foreground">Patrón observado</p>
                   {pattern.wakeNights > 0 ? (
                     <>
                       {pattern.energyDiff > 0.5 && (
-                        <p className="text-foreground">Tu energía es <strong>{pattern.energyDiff} puntos mayor</strong> los días que duermes sin despertar entre 2-4 AM.</p>
+                        <p className="text-foreground">Tu energía parece ser <strong>{pattern.energyDiff} puntos mayor</strong> los días sin despertares 2-4 AM.</p>
                       )}
                       {pattern.bloatDiff > 0.5 && (
-                        <p className="text-foreground">La inflamación sube <strong>{pattern.bloatDiff} puntos</strong> en días con despertares nocturnos.</p>
+                        <p className="text-foreground">La inflamación tiende a subir <strong>{pattern.bloatDiff} puntos</strong> en días con despertares nocturnos.</p>
                       )}
                       {pattern.energyDiff <= 0.5 && pattern.bloatDiff <= 0.5 && (
                         <p className="text-muted-foreground">Los despertares 2-4 AM no parecen afectar significativamente tu energía ni inflamación en este período.</p>
@@ -155,28 +173,30 @@ function HistorialPage() {
             </Card>
           )}
 
-          {/* AI Insights */}
-          <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold">Insights con IA</p>
-                <p className="text-[11px] text-muted-foreground">Análisis personalizado de tus registros</p>
+          {/* AI Insights — only with enough data */}
+          {hasEnoughData && (
+            <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">Insights con IA</p>
+                  <p className="text-[11px] text-muted-foreground">Análisis personalizado de tus registros</p>
+                </div>
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
-              <Sparkles className="h-4 w-4 text-primary" />
-            </div>
-            {insights ? (
-              <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{insights}</div>
-            ) : (
-              <Button onClick={runInsights} disabled={loadingInsights} className="w-full rounded-full">
-                {loadingInsights ? "Analizando tus datos..." : "Generar insights con IA"}
-              </Button>
-            )}
-            {insights && (
-              <Button variant="outline" size="sm" onClick={runInsights} disabled={loadingInsights} className="mt-3 w-full rounded-full">
-                {loadingInsights ? "Regenerando..." : "Regenerar"}
-              </Button>
-            )}
-          </Card>
+              {insights ? (
+                <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">{insights}</div>
+              ) : (
+                <Button onClick={runInsights} disabled={loadingInsights} className="w-full rounded-full">
+                  {loadingInsights ? "Analizando tus datos..." : "Generar insights con IA"}
+                </Button>
+              )}
+              {insights && (
+                <Button variant="outline" size="sm" onClick={runInsights} disabled={loadingInsights} className="mt-3 w-full rounded-full">
+                  {loadingInsights ? "Regenerando..." : "Regenerar"}
+                </Button>
+              )}
+            </Card>
+          )}
 
           <ChartCard title="🌸 Inflamación abdominal" data={data} dataKey="inflamacion" color="var(--chart-1)" />
           <ChartCard title="⚡ Energía" data={data} dataKey="energia" color="var(--chart-2)" />
