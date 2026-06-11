@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { LogOut, Sparkles, Flame, TrendingUp, Moon, Zap, Wind } from "lucide-react";
+import { LogOut, Sparkles, Flame, TrendingUp, Moon, Zap, Wind, Lightbulb, RefreshCw, CheckCircle2, HelpCircle } from "lucide-react";
+import { generarConsejoHoy, obtenerSeguimientoPendiente, responderSeguimiento } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/_authenticated/inicio")({
   component: InicioPage,
