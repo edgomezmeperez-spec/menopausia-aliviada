@@ -79,6 +79,16 @@ function InicioPage() {
   const [history, setHistory] = useState<Entry[]>([]);
   const [savedToday, setSavedToday] = useState(false);
 
+  // Consejo de hoy
+  const consejoFn = useServerFn(generarConsejoHoy);
+  const seguimientoFn = useServerFn(obtenerSeguimientoPendiente);
+  const responderFn = useServerFn(responderSeguimiento);
+  const [consejo, setConsejo] = useState<{ id: string; content: string; category: string } | null>(null);
+  const [loadingConsejo, setLoadingConsejo] = useState(false);
+  const [pendiente, setPendiente] = useState<{ id: string; content: string } | null>(null);
+  const [lastFollowup, setLastFollowup] = useState<{ recommendation: { content: string }; followup: { followed: string; feeling: string | null } } | null>(null);
+  const [followedAnswer, setFollowedAnswer] = useState<"si" | "parcial" | "no" | null>(null);
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? "";
