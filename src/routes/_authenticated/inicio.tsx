@@ -113,6 +113,18 @@ function InicioPage() {
           setSavedToday(true);
         }
       });
+
+    // Cargar consejo de hoy y seguimiento pendiente en paralelo
+    consejoFn({ data: { force: false } })
+      .then(res => setConsejo(res.recommendation as any))
+      .catch(() => { /* silencioso, mostramos botón manual */ });
+
+    seguimientoFn({ data: {} })
+      .then(res => {
+        if (res.pending) setPendiente(res.pending as any);
+        else if (res.lastFollowup) setLastFollowup(res.lastFollowup as any);
+      })
+      .catch(() => {});
   }, []);
 
   const streak = useMemo(() => {
