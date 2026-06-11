@@ -178,6 +178,31 @@ function InicioPage() {
     navigate({ to: "/auth", replace: true });
   }
 
+  async function regenerarConsejo() {
+    setLoadingConsejo(true);
+    try {
+      const res = await consejoFn({ data: { force: true } });
+      setConsejo(res.recommendation as any);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    } finally {
+      setLoadingConsejo(false);
+    }
+  }
+
+  async function enviarSeguimiento(feeling: "mucho_mejor" | "algo_mejor" | "igual" | "peor" | null) {
+    if (!pendiente || !followedAnswer) return;
+    try {
+      await responderFn({ data: { recommendationId: pendiente.id, followed: followedAnswer, feeling } });
+      toast.success("¡Gracias por contarnos!");
+      setLastFollowup({ recommendation: { content: pendiente.content }, followup: { followed: followedAnswer, feeling } });
+      setPendiente(null);
+      setFollowedAnswer(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error");
+    }
+  }
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
   const today = new Date().toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
