@@ -121,6 +121,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_memories: {
+        Row: {
+          active: boolean
+          category: string
+          confidence: number
+          content: string
+          created_at: string
+          evidence: string | null
+          id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          confidence?: number
+          content: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          confidence?: number
+          content?: string
+          created_at?: string
+          evidence?: string | null
+          id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -50,14 +50,50 @@ async function callGatewayJSON<T = any>(prompt: string, system?: string): Promis
 export const askAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskInput.parse(input))
-  .handler(async ({ data }) => {
-    const reply = await callGateway({ system: SYSTEM_PROMPT, messages: data.messages });
+  .handler(async ({ data, context }) => {
+    const memories = await fetchMemories(context.supabase);
+    const system = SYSTEM_PROMPT + memoriesBlock(memories) + (memories.length > 0
+      ? "\nUsa esta memoria personalizada para que tus respuestas se sientan adaptadas a ELLA, no genéricas."
+      : "");
+    const reply = await callGateway({ system, messages: data.messages });
     return { reply };
   });
 
 type Entry = { entry_date: string; bloating: number; energy: number; sleep: number; woke_2_4am: boolean };
 type Recommendation = { id: string; content: string; category: string; source: string; for_date: string; created_at: string };
 type Followup = { recommendation_id: string; followed: "si" | "parcial" | "no"; feeling: string | null; created_at: string };
+type Memory = { id: string; category: string; content: string; confidence: number; source: string; evidence: string | null; active: boolean; created_at: string; updated_at: string };
+
+const MEMORY_CATEGORIES = [
+  "sintomas_predominantes",
+  "mejoran_energia",
+  "reducen_inflamacion",
+  "empeoran_sueno",
+  "preferencias_alimentarias",
+  "objetivos_personales",
+  "recomendaciones_efectivas",
+  "recomendaciones_no_efectivas",
+  "patrones_observados",
+  "otro",
+] as const;
+
+async function fetchMemories(supabase: any, limit = 40): Promise<Memory[]> {
+  const { data, error } = await supabase
+    .from("user_memories")
+    .select("id,category,content,confidence,source,evidence,active,created_at,updated_at")
+    .eq("active", true)
+    .order("confidence", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return (data ?? []) as Memory[];
+}
+
+function memoriesBlock(memories: Memory[]): string {
+  if (memories.length === 0) return "";
+  const lines = memories.slice(0, 25).map(m => `- [${m.category}] ${m.content}`).join("\n");
+  return `\n\nLo que ya sabemos de esta usuaria (memoria personalizada, prioriza esta información sobre consejos genéricos):\n${lines}\n`;
+}
 
 function computeStats(entries: Entry[]) {
   if (entries.length === 0) return null;
@@ -195,7 +231,10 @@ export const generarInsightsHistorial = createServerFn({ method: "POST" })
       ? `\n\nAdherencia al plan:\n- Recomendaciones recibidas: ${adherence.total}\n- Respondidas: ${adherence.answered}\n- % adherencia: ${adherence.adherencePercent}%`
       : "";
 
-    const prompt = `Analiza los datos de salud de una mujer en menopausia (últimos ${data.days} días, ${stats.total} registros) y genera insights breves en español, con tono empático y de acompañamiento. EVITA afirmaciones contundentes; usa expresiones como "parece haber", "podría sugerir", "se observa una tendencia".
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
+
+    const prompt = `Analiza los datos de salud de una mujer en menopausia (últimos ${data.days} días, ${stats.total} registros) y genera insights breves en español, con tono empático y de acompañamiento. EVITA afirmaciones contundentes; usa expresiones como "parece haber", "podría sugerir", "se observa una tendencia".${memBlock}
 
 Datos:
 - Inflamación abdominal: ${stats.bloating}/10 (tendencia: ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})
@@ -231,7 +270,10 @@ export const generarResumenConsulta = createServerFn({ method: "POST" })
       return { summary: "Aún no tienes registros de los últimos 30 días. Comienza guardando tu registro diario para generar un resumen.", stats: null, questions: [] };
     }
 
-    const prompt = `Genera un resumen profesional y empático en español para llevar a la próxima consulta médica de una mujer en menopausia.
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
+
+    const prompt = `Genera un resumen profesional y empático en español para llevar a la próxima consulta médica de una mujer en menopausia.${memBlock}
 
 Datos de los últimos 30 días (${stats.total} registros):
 - Inflamación abdominal promedio: ${stats.bloating}/10 (tendencia ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})
@@ -245,7 +287,7 @@ Estructura tu respuesta en Markdown:
 ## Resumen de síntomas
 ## Evolución en 30 días
 ## Preguntas sugeridas para la médica/o
-(Lista numerada de 6 preguntas concretas)
+(Lista numerada de 6 preguntas concretas, personalizadas según los datos y la memoria de la usuaria)
 
 Termina con una nota breve recordando que esto es informativo y no reemplaza la evaluación médica.`;
 
@@ -289,9 +331,12 @@ export const generarConsejoHoy = createServerFn({ method: "POST" })
       ? `Datos recientes (${stats.total} días): inflamación ${stats.bloating}/10, energía ${stats.energy}/10, sueño ${stats.sleep}/10, despertares 2-4 AM ${stats.wakePercent}%.`
       : "Aún no hay datos suficientes. Genera un consejo general suave de bienestar.";
 
-    const prompt = `${context_text}
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
 
-Genera UN único consejo personalizado del día para una mujer en menopausia (40-65 años). Debe ser concreto, accionable hoy mismo, cálido y breve (máx. 2 frases). Puede ser un hábito, alimento, bebida, batido, ejercicio o pauta de sueño.
+    const prompt = `${context_text}${memBlock}
+
+Genera UN único consejo personalizado del día para esta mujer en menopausia (40-65 años). Debe ser concreto, accionable hoy mismo, cálido y breve (máx. 2 frases). Prioriza lo que sabemos de ELLA (hábitos que le han funcionado, lo que NO le ha funcionado, sus preferencias) sobre consejos genéricos. Puede ser un hábito, alimento, bebida, batido, ejercicio o pauta de sueño.
 
 Responde SOLO con JSON válido (sin markdown):
 {
@@ -387,9 +432,12 @@ export const generarPlanAccion = createServerFn({ method: "POST" })
       ? `Promedios últimos ${stats.total} días: inflamación ${stats.bloating}/10, energía ${stats.energy}/10, sueño ${stats.sleep}/10, despertares 2-4 AM ${stats.wakePercent}%.`
       : "Sin datos suficientes. Genera un plan general de bienestar suave.";
 
-    const prompt = `${ctx}
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
 
-Genera un plan de acción semanal personalizado para una mujer en menopausia enfocado en inflamación abdominal, fatiga y despertares 2-4 AM. Tono cálido, no clínico, orientación general.
+    const prompt = `${ctx}${memBlock}
+
+Genera un plan de acción semanal verdaderamente personalizado para esta mujer en menopausia, enfocado en inflamación abdominal, fatiga y despertares 2-4 AM. Tono cálido, no clínico, orientación general. Prioriza lo que la memoria indica que le ha funcionado y EVITA repetir lo que la memoria indica que NO le ha funcionado.
 
 Responde SOLO con JSON válido (sin markdown):
 {
@@ -455,3 +503,145 @@ export const obtenerDatosPlan = createServerFn({ method: "POST" })
 
     return { adherence, latestPlanDate: latestDate, planByCategory: grouped, recentRecommendations: recs.slice(0, 10), followups };
   });
+
+/* ====================== Memoria inteligente de la usuaria ====================== */
+
+const MIN_RECORDS_FOR_MEMORY = 5;
+
+export const extraerMemorias = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({}).parse(input ?? {}))
+  .handler(async ({ context }) => {
+    const entries = await fetchEntries(context.supabase, 60);
+    const stats = computeStats(entries);
+
+    if (!stats || stats.total < MIN_RECORDS_FOR_MEMORY) {
+      return {
+        added: 0,
+        skipped: true,
+        message: `Aún no hay suficientes registros. Llevas ${stats?.total ?? 0} de ${MIN_RECORDS_FOR_MEMORY} necesarios para empezar a aprender sobre ti.`,
+      };
+    }
+
+    const recs = await fetchRecommendations(context.supabase, 60);
+    const followups = await fetchFollowups(context.supabase, recs.map(r => r.id));
+    const adherence = computeAdherence(recs, followups);
+    const fByRec = new Map(followups.map(f => [f.recommendation_id, f]));
+
+    // Build evidence: which recs were followed, and how the user felt
+    const efectivas = recs
+      .filter(r => {
+        const f = fByRec.get(r.id);
+        return f && (f.followed === "si" || f.followed === "parcial") && (f.feeling === "mucho_mejor" || f.feeling === "algo_mejor");
+      })
+      .slice(0, 12)
+      .map(r => `- (${r.category}) ${r.content}`);
+
+    const noEfectivas = recs
+      .filter(r => {
+        const f = fByRec.get(r.id);
+        return f && f.followed === "no" || (f && f.feeling === "igual") || (f && f.feeling === "peor");
+      })
+      .slice(0, 12)
+      .map(r => `- (${r.category}) ${r.content}`);
+
+    const existing = await fetchMemories(context.supabase, 60);
+    const existingBlock = existing.length
+      ? `\n\nMemorias ya guardadas (NO repetir literalmente, solo si hay nueva evidencia que las refuerce o contradiga):\n${existing.slice(0, 20).map(m => `- [${m.category}] ${m.content}`).join("\n")}`
+      : "";
+
+    const prompt = `Eres una IA que mantiene una "memoria personalizada" sobre una mujer en perimenopausia/menopausia, para que la app evolucione con ella.
+
+A partir de sus datos, extrae entre 3 y 8 aprendizajes NUEVOS, breves (1 frase), accionables y prudentes. Usa expresiones tipo "parece", "podría", "se observa una tendencia". Nada de afirmaciones médicas.
+
+Datos (últimos ${stats.total} días):
+- Inflamación media ${stats.bloating}/10 (tendencia ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})
+- Energía media ${stats.energy}/10 (tendencia ${stats.trendEnergy > 0 ? "+" : ""}${stats.trendEnergy})
+- Sueño medio ${stats.sleep}/10 (tendencia ${stats.trendSleep > 0 ? "+" : ""}${stats.trendSleep})
+- Despertares 2-4 AM: ${stats.wakePercent}% de las noches
+- Síntomas predominantes: ${stats.frequent.slice(0, 3).map(f => `${f.label} ${f.percent}%`).join(", ")}
+- Adherencia al plan: ${adherence.adherencePercent}% (${adherence.answered}/${adherence.total} respondidas)
+
+Recomendaciones que SÍ siguió y dice haber sentido mejor:
+${efectivas.length ? efectivas.join("\n") : "- (sin datos aún)"}
+
+Recomendaciones que NO siguió o no notó mejoría:
+${noEfectivas.length ? noEfectivas.join("\n") : "- (sin datos aún)"}${existingBlock}
+
+Devuelve SOLO JSON válido (sin markdown), con este formato:
+{
+  "memories": [
+    {
+      "category": "sintomas_predominantes" | "mejoran_energia" | "reducen_inflamacion" | "empeoran_sueno" | "preferencias_alimentarias" | "objetivos_personales" | "recomendaciones_efectivas" | "recomendaciones_no_efectivas" | "patrones_observados" | "otro",
+      "content": "Una frase clara en segunda persona singular (tú), prudente.",
+      "confidence": 0-100,
+      "evidence": "Breve referencia a los datos que la respaldan."
+    }
+  ]
+}`;
+
+    let parsed: { memories: { category: string; content: string; confidence: number; evidence?: string }[] };
+    try {
+      parsed = await callGatewayJSON<typeof parsed>(prompt);
+    } catch {
+      return { added: 0, skipped: false, message: "No se pudieron extraer memorias en este intento." };
+    }
+
+    const rows = (parsed.memories ?? [])
+      .filter(m => m && typeof m.content === "string" && m.content.trim().length > 0)
+      .slice(0, 8)
+      .map(m => ({
+        user_id: context.userId,
+        category: (MEMORY_CATEGORIES as readonly string[]).includes(m.category) ? m.category : "otro",
+        content: m.content.trim().slice(0, 500),
+        confidence: Math.max(0, Math.min(100, Math.round(m.confidence ?? 60))),
+        evidence: (m.evidence ?? "").slice(0, 500) || null,
+        source: "ia",
+        active: true,
+      }));
+
+    if (rows.length === 0) {
+      return { added: 0, skipped: false, message: "Sin nuevos aprendizajes esta vez." };
+    }
+
+    const { error } = await context.supabase.from("user_memories").insert(rows);
+    if (error) throw new Error(error.message);
+
+    return { added: rows.length, skipped: false, message: `Se añadieron ${rows.length} nuevos aprendizajes sobre ti.` };
+  });
+
+export const obtenerAprendizajes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({}).parse(input ?? {}))
+  .handler(async ({ context }) => {
+    const memories = await fetchMemories(context.supabase, 80);
+    const entries = await fetchEntries(context.supabase, 30);
+    const stats = computeStats(entries);
+
+    const grouped: Record<string, Memory[]> = {};
+    memories.forEach(m => {
+      grouped[m.category] = grouped[m.category] ?? [];
+      grouped[m.category].push(m);
+    });
+
+    return {
+      memories,
+      grouped,
+      total: memories.length,
+      totalEntries: stats?.total ?? 0,
+      minRequired: MIN_RECORDS_FOR_MEMORY,
+    };
+  });
+
+export const desactivarMemoria = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("user_memories")
+      .update({ active: false })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+

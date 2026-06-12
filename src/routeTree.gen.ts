@@ -18,6 +18,7 @@ import { Route as AuthenticatedHistorialRouteImport } from './routes/_authentica
 import { Route as AuthenticatedConsultaRouteImport } from './routes/_authenticated/consulta'
 import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
 import { Route as AuthenticatedAsistenteRouteImport } from './routes/_authenticated/asistente'
+import { Route as AuthenticatedAprendizajesRouteImport } from './routes/_authenticated/aprendizajes'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -63,10 +64,17 @@ const AuthenticatedAsistenteRoute = AuthenticatedAsistenteRouteImport.update({
   path: '/asistente',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAprendizajesRoute =
+  AuthenticatedAprendizajesRouteImport.update({
+    id: '/aprendizajes',
+    path: '/aprendizajes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/aprendizajes': typeof AuthenticatedAprendizajesRoute
   '/asistente': typeof AuthenticatedAsistenteRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/consulta': typeof AuthenticatedConsultaRoute
@@ -77,6 +85,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/aprendizajes': typeof AuthenticatedAprendizajesRoute
   '/asistente': typeof AuthenticatedAsistenteRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/consulta': typeof AuthenticatedConsultaRoute
@@ -89,6 +98,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/aprendizajes': typeof AuthenticatedAprendizajesRoute
   '/_authenticated/asistente': typeof AuthenticatedAsistenteRoute
   '/_authenticated/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/_authenticated/consulta': typeof AuthenticatedConsultaRoute
@@ -101,6 +111,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/aprendizajes'
     | '/asistente'
     | '/biblioteca'
     | '/consulta'
@@ -111,6 +122,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/aprendizajes'
     | '/asistente'
     | '/biblioteca'
     | '/consulta'
@@ -122,6 +134,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/aprendizajes'
     | '/_authenticated/asistente'
     | '/_authenticated/biblioteca'
     | '/_authenticated/consulta'
@@ -201,10 +214,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAsistenteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/aprendizajes': {
+      id: '/_authenticated/aprendizajes'
+      path: '/aprendizajes'
+      fullPath: '/aprendizajes'
+      preLoaderRoute: typeof AuthenticatedAprendizajesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAprendizajesRoute: typeof AuthenticatedAprendizajesRoute
   AuthenticatedAsistenteRoute: typeof AuthenticatedAsistenteRoute
   AuthenticatedBibliotecaRoute: typeof AuthenticatedBibliotecaRoute
   AuthenticatedConsultaRoute: typeof AuthenticatedConsultaRoute
@@ -214,6 +235,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAprendizajesRoute: AuthenticatedAprendizajesRoute,
   AuthenticatedAsistenteRoute: AuthenticatedAsistenteRoute,
   AuthenticatedBibliotecaRoute: AuthenticatedBibliotecaRoute,
   AuthenticatedConsultaRoute: AuthenticatedConsultaRoute,
