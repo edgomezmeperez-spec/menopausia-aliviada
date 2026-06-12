@@ -432,9 +432,12 @@ export const generarPlanAccion = createServerFn({ method: "POST" })
       ? `Promedios últimos ${stats.total} días: inflamación ${stats.bloating}/10, energía ${stats.energy}/10, sueño ${stats.sleep}/10, despertares 2-4 AM ${stats.wakePercent}%.`
       : "Sin datos suficientes. Genera un plan general de bienestar suave.";
 
-    const prompt = `${ctx}
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
 
-Genera un plan de acción semanal personalizado para una mujer en menopausia enfocado en inflamación abdominal, fatiga y despertares 2-4 AM. Tono cálido, no clínico, orientación general.
+    const prompt = `${ctx}${memBlock}
+
+Genera un plan de acción semanal verdaderamente personalizado para esta mujer en menopausia, enfocado en inflamación abdominal, fatiga y despertares 2-4 AM. Tono cálido, no clínico, orientación general. Prioriza lo que la memoria indica que le ha funcionado y EVITA repetir lo que la memoria indica que NO le ha funcionado.
 
 Responde SOLO con JSON válido (sin markdown):
 {
