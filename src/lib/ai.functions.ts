@@ -503,3 +503,145 @@ export const obtenerDatosPlan = createServerFn({ method: "POST" })
 
     return { adherence, latestPlanDate: latestDate, planByCategory: grouped, recentRecommendations: recs.slice(0, 10), followups };
   });
+
+/* ====================== Memoria inteligente de la usuaria ====================== */
+
+const MIN_RECORDS_FOR_MEMORY = 5;
+
+export const extraerMemorias = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({}).parse(input ?? {}))
+  .handler(async ({ context }) => {
+    const entries = await fetchEntries(context.supabase, 60);
+    const stats = computeStats(entries);
+
+    if (!stats || stats.total < MIN_RECORDS_FOR_MEMORY) {
+      return {
+        added: 0,
+        skipped: true,
+        message: `Aún no hay suficientes registros. Llevas ${stats?.total ?? 0} de ${MIN_RECORDS_FOR_MEMORY} necesarios para empezar a aprender sobre ti.`,
+      };
+    }
+
+    const recs = await fetchRecommendations(context.supabase, 60);
+    const followups = await fetchFollowups(context.supabase, recs.map(r => r.id));
+    const adherence = computeAdherence(recs, followups);
+    const fByRec = new Map(followups.map(f => [f.recommendation_id, f]));
+
+    // Build evidence: which recs were followed, and how the user felt
+    const efectivas = recs
+      .filter(r => {
+        const f = fByRec.get(r.id);
+        return f && (f.followed === "si" || f.followed === "parcial") && (f.feeling === "mucho_mejor" || f.feeling === "algo_mejor");
+      })
+      .slice(0, 12)
+      .map(r => `- (${r.category}) ${r.content}`);
+
+    const noEfectivas = recs
+      .filter(r => {
+        const f = fByRec.get(r.id);
+        return f && f.followed === "no" || (f && f.feeling === "igual") || (f && f.feeling === "peor");
+      })
+      .slice(0, 12)
+      .map(r => `- (${r.category}) ${r.content}`);
+
+    const existing = await fetchMemories(context.supabase, 60);
+    const existingBlock = existing.length
+      ? `\n\nMemorias ya guardadas (NO repetir literalmente, solo si hay nueva evidencia que las refuerce o contradiga):\n${existing.slice(0, 20).map(m => `- [${m.category}] ${m.content}`).join("\n")}`
+      : "";
+
+    const prompt = `Eres una IA que mantiene una "memoria personalizada" sobre una mujer en perimenopausia/menopausia, para que la app evolucione con ella.
+
+A partir de sus datos, extrae entre 3 y 8 aprendizajes NUEVOS, breves (1 frase), accionables y prudentes. Usa expresiones tipo "parece", "podría", "se observa una tendencia". Nada de afirmaciones médicas.
+
+Datos (últimos ${stats.total} días):
+- Inflamación media ${stats.bloating}/10 (tendencia ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})
+- Energía media ${stats.energy}/10 (tendencia ${stats.trendEnergy > 0 ? "+" : ""}${stats.trendEnergy})
+- Sueño medio ${stats.sleep}/10 (tendencia ${stats.trendSleep > 0 ? "+" : ""}${stats.trendSleep})
+- Despertares 2-4 AM: ${stats.wakePercent}% de las noches
+- Síntomas predominantes: ${stats.frequent.slice(0, 3).map(f => `${f.label} ${f.percent}%`).join(", ")}
+- Adherencia al plan: ${adherence.adherencePercent}% (${adherence.answered}/${adherence.total} respondidas)
+
+Recomendaciones que SÍ siguió y dice haber sentido mejor:
+${efectivas.length ? efectivas.join("\n") : "- (sin datos aún)"}
+
+Recomendaciones que NO siguió o no notó mejoría:
+${noEfectivas.length ? noEfectivas.join("\n") : "- (sin datos aún)"}${existingBlock}
+
+Devuelve SOLO JSON válido (sin markdown), con este formato:
+{
+  "memories": [
+    {
+      "category": "sintomas_predominantes" | "mejoran_energia" | "reducen_inflamacion" | "empeoran_sueno" | "preferencias_alimentarias" | "objetivos_personales" | "recomendaciones_efectivas" | "recomendaciones_no_efectivas" | "patrones_observados" | "otro",
+      "content": "Una frase clara en segunda persona singular (tú), prudente.",
+      "confidence": 0-100,
+      "evidence": "Breve referencia a los datos que la respaldan."
+    }
+  ]
+}`;
+
+    let parsed: { memories: { category: string; content: string; confidence: number; evidence?: string }[] };
+    try {
+      parsed = await callGatewayJSON<typeof parsed>(prompt);
+    } catch {
+      return { added: 0, skipped: false, message: "No se pudieron extraer memorias en este intento." };
+    }
+
+    const rows = (parsed.memories ?? [])
+      .filter(m => m && typeof m.content === "string" && m.content.trim().length > 0)
+      .slice(0, 8)
+      .map(m => ({
+        user_id: context.userId,
+        category: (MEMORY_CATEGORIES as readonly string[]).includes(m.category) ? m.category : "otro",
+        content: m.content.trim().slice(0, 500),
+        confidence: Math.max(0, Math.min(100, Math.round(m.confidence ?? 60))),
+        evidence: (m.evidence ?? "").slice(0, 500) || null,
+        source: "ia",
+        active: true,
+      }));
+
+    if (rows.length === 0) {
+      return { added: 0, skipped: false, message: "Sin nuevos aprendizajes esta vez." };
+    }
+
+    const { error } = await context.supabase.from("user_memories").insert(rows);
+    if (error) throw new Error(error.message);
+
+    return { added: rows.length, skipped: false, message: `Se añadieron ${rows.length} nuevos aprendizajes sobre ti.` };
+  });
+
+export const obtenerAprendizajes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({}).parse(input ?? {}))
+  .handler(async ({ context }) => {
+    const memories = await fetchMemories(context.supabase, 80);
+    const entries = await fetchEntries(context.supabase, 30);
+    const stats = computeStats(entries);
+
+    const grouped: Record<string, Memory[]> = {};
+    memories.forEach(m => {
+      grouped[m.category] = grouped[m.category] ?? [];
+      grouped[m.category].push(m);
+    });
+
+    return {
+      memories,
+      grouped,
+      total: memories.length,
+      totalEntries: stats?.total ?? 0,
+      minRequired: MIN_RECORDS_FOR_MEMORY,
+    };
+  });
+
+export const desactivarMemoria = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("user_memories")
+      .update({ active: false })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
