@@ -50,8 +50,12 @@ async function callGatewayJSON<T = any>(prompt: string, system?: string): Promis
 export const askAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskInput.parse(input))
-  .handler(async ({ data }) => {
-    const reply = await callGateway({ system: SYSTEM_PROMPT, messages: data.messages });
+  .handler(async ({ data, context }) => {
+    const memories = await fetchMemories(context.supabase);
+    const system = SYSTEM_PROMPT + memoriesBlock(memories) + (memories.length > 0
+      ? "\nUsa esta memoria personalizada para que tus respuestas se sientan adaptadas a ELLA, no genéricas."
+      : "");
+    const reply = await callGateway({ system, messages: data.messages });
     return { reply };
   });
 
