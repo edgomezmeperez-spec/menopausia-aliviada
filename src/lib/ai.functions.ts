@@ -331,9 +331,12 @@ export const generarConsejoHoy = createServerFn({ method: "POST" })
       ? `Datos recientes (${stats.total} días): inflamación ${stats.bloating}/10, energía ${stats.energy}/10, sueño ${stats.sleep}/10, despertares 2-4 AM ${stats.wakePercent}%.`
       : "Aún no hay datos suficientes. Genera un consejo general suave de bienestar.";
 
-    const prompt = `${context_text}
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
 
-Genera UN único consejo personalizado del día para una mujer en menopausia (40-65 años). Debe ser concreto, accionable hoy mismo, cálido y breve (máx. 2 frases). Puede ser un hábito, alimento, bebida, batido, ejercicio o pauta de sueño.
+    const prompt = `${context_text}${memBlock}
+
+Genera UN único consejo personalizado del día para esta mujer en menopausia (40-65 años). Debe ser concreto, accionable hoy mismo, cálido y breve (máx. 2 frases). Prioriza lo que sabemos de ELLA (hábitos que le han funcionado, lo que NO le ha funcionado, sus preferencias) sobre consejos genéricos. Puede ser un hábito, alimento, bebida, batido, ejercicio o pauta de sueño.
 
 Responde SOLO con JSON válido (sin markdown):
 {
