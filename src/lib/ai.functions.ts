@@ -231,7 +231,10 @@ export const generarInsightsHistorial = createServerFn({ method: "POST" })
       ? `\n\nAdherencia al plan:\n- Recomendaciones recibidas: ${adherence.total}\n- Respondidas: ${adherence.answered}\n- % adherencia: ${adherence.adherencePercent}%`
       : "";
 
-    const prompt = `Analiza los datos de salud de una mujer en menopausia (últimos ${data.days} días, ${stats.total} registros) y genera insights breves en español, con tono empático y de acompañamiento. EVITA afirmaciones contundentes; usa expresiones como "parece haber", "podría sugerir", "se observa una tendencia".
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
+
+    const prompt = `Analiza los datos de salud de una mujer en menopausia (últimos ${data.days} días, ${stats.total} registros) y genera insights breves en español, con tono empático y de acompañamiento. EVITA afirmaciones contundentes; usa expresiones como "parece haber", "podría sugerir", "se observa una tendencia".${memBlock}
 
 Datos:
 - Inflamación abdominal: ${stats.bloating}/10 (tendencia: ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})
