@@ -270,7 +270,10 @@ export const generarResumenConsulta = createServerFn({ method: "POST" })
       return { summary: "Aún no tienes registros de los últimos 30 días. Comienza guardando tu registro diario para generar un resumen.", stats: null, questions: [] };
     }
 
-    const prompt = `Genera un resumen profesional y empático en español para llevar a la próxima consulta médica de una mujer en menopausia.
+    const memories = await fetchMemories(context.supabase);
+    const memBlock = memoriesBlock(memories);
+
+    const prompt = `Genera un resumen profesional y empático en español para llevar a la próxima consulta médica de una mujer en menopausia.${memBlock}
 
 Datos de los últimos 30 días (${stats.total} registros):
 - Inflamación abdominal promedio: ${stats.bloating}/10 (tendencia ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})
@@ -284,7 +287,7 @@ Estructura tu respuesta en Markdown:
 ## Resumen de síntomas
 ## Evolución en 30 días
 ## Preguntas sugeridas para la médica/o
-(Lista numerada de 6 preguntas concretas)
+(Lista numerada de 6 preguntas concretas, personalizadas según los datos y la memoria de la usuaria)
 
 Termina con una nota breve recordando que esto es informativo y no reemplaza la evaluación médica.`;
 
