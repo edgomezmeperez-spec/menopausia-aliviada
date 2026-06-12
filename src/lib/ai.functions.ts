@@ -58,6 +58,38 @@ export const askAssistant = createServerFn({ method: "POST" })
 type Entry = { entry_date: string; bloating: number; energy: number; sleep: number; woke_2_4am: boolean };
 type Recommendation = { id: string; content: string; category: string; source: string; for_date: string; created_at: string };
 type Followup = { recommendation_id: string; followed: "si" | "parcial" | "no"; feeling: string | null; created_at: string };
+type Memory = { id: string; category: string; content: string; confidence: number; source: string; evidence: string | null; active: boolean; created_at: string; updated_at: string };
+
+const MEMORY_CATEGORIES = [
+  "sintomas_predominantes",
+  "mejoran_energia",
+  "reducen_inflamacion",
+  "empeoran_sueno",
+  "preferencias_alimentarias",
+  "objetivos_personales",
+  "recomendaciones_efectivas",
+  "recomendaciones_no_efectivas",
+  "patrones_observados",
+  "otro",
+] as const;
+
+async function fetchMemories(supabase: any, limit = 40): Promise<Memory[]> {
+  const { data, error } = await supabase
+    .from("user_memories")
+    .select("id,category,content,confidence,source,evidence,active,created_at,updated_at")
+    .eq("active", true)
+    .order("confidence", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+  if (error) return [];
+  return (data ?? []) as Memory[];
+}
+
+function memoriesBlock(memories: Memory[]): string {
+  if (memories.length === 0) return "";
+  const lines = memories.slice(0, 25).map(m => `- [${m.category}] ${m.content}`).join("\n");
+  return `\n\nLo que ya sabemos de esta usuaria (memoria personalizada, prioriza esta información sobre consejos genéricos):\n${lines}\n`;
+}
 
 function computeStats(entries: Entry[]) {
   if (entries.length === 0) return null;
