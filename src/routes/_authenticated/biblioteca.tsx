@@ -85,7 +85,9 @@ const CATEGORIES: Category[] = [
       { title: "Naturaleza, aunque sean 10 minutos",
         body: "Caminar entre árboles o cuidar plantas baja el estrés medido en saliva. Cuenta como medicina suave y gratuita." },
     ],
+  },
   {
+
     key: "yoga", emoji: "🧘‍♀️", name: "Yoga en la menopausia",
     description: "Rutina personalizada de yoga para aliviar síntomas.",
     articles: [
