@@ -51,10 +51,29 @@ export const askAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskInput.parse(input))
   .handler(async ({ data, context }) => {
-    const memories = await fetchMemories(context.supabase);
-    const system = SYSTEM_PROMPT + memoriesBlock(memories) + (memories.length > 0
-      ? "\nUsa esta memoria personalizada para que tus respuestas se sientan adaptadas a ELLA, no genéricas."
-      : "");
+    const [memories, entries, recs] = await Promise.all([
+      fetchMemories(context.supabase),
+      fetchEntries(context.supabase, 14).catch(() => [] as Entry[]),
+      fetchRecommendations(context.supabase, 14).catch(() => [] as Recommendation[]),
+    ]);
+    const followups = await fetchFollowups(context.supabase, recs.map(r => r.id)).catch(() => [] as Followup[]);
+    const stats = computeStats(entries);
+    const adherence = recs.length > 0 ? computeAdherence(recs, followups) : null;
+
+    const statsBlock = stats
+      ? `\n\nDatos recientes de la usuaria (${stats.total} registros, últimos 14 días):\n- Inflamación promedio: ${stats.bloating}/10 (tendencia ${stats.trendBloating > 0 ? "+" : ""}${stats.trendBloating})\n- Energía promedio: ${stats.energy}/10 (tendencia ${stats.trendEnergy > 0 ? "+" : ""}${stats.trendEnergy})\n- Sueño promedio: ${stats.sleep}/10 (tendencia ${stats.trendSleep > 0 ? "+" : ""}${stats.trendSleep})\n- Despertares 2-4 AM: ${stats.wakePercent}% de las noches\n- Síntoma más frecuente: ${stats.frequent[0]?.label ?? "—"}`
+      : "\n\n(Aún no hay registros suficientes de síntomas para personalizar con datos cuantitativos.)";
+
+    const recentRec = recs[0];
+    const recBlock = recentRec
+      ? `\n\nÚltimo consejo recibido (${recentRec.for_date}): "${recentRec.content}"${adherence ? ` · Adherencia general: ${adherence.adherencePercent}%` : ""}`
+      : "";
+
+    const personalize = (stats || memories.length > 0)
+      ? `\n\nINSTRUCCIONES DE PERSONALIZACIÓN (obligatorio):\n- NO repitas saludos como "¡Hola!" si ya hubo un mensaje previo del asistente; ve directo al contenido.\n- Refiere cuando sea útil a SUS datos concretos (p.ej. "viendo que tu inflamación promedio está en ${stats?.bloating ?? "—"}/10..." o "como te despiertas el ${stats?.wakePercent ?? 0}% de las noches...").\n- Adapta el consejo a lo que YA sabemos de ella; evita listas genéricas tipo manual y prioriza lo que le ha funcionado o no.\n- Si no hay datos en algún eje, dilo brevemente e invítala a registrar.\n- Cierra con UNA sola frase breve recordando que no reemplaza al médico (no la repitas si ya apareció en mensajes previos).`
+      : `\n\nINSTRUCCIONES:\n- No repitas saludos si ya saludaste antes; ve directo a la respuesta.\n- Aún no tienes datos personales de la usuaria: invítala suavemente a registrar sus síntomas para personalizar mejor las próximas respuestas.`;
+
+    const system = SYSTEM_PROMPT + memoriesBlock(memories) + statsBlock + recBlock + personalize;
     const reply = await callGateway({ system, messages: data.messages });
     return { reply };
   });
