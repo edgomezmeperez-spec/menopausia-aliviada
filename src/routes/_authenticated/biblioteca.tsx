@@ -85,8 +85,86 @@ const CATEGORIES: Category[] = [
       { title: "Naturaleza, aunque sean 10 minutos",
         body: "Caminar entre árboles o cuidar plantas baja el estrés medido en saliva. Cuenta como medicina suave y gratuita." },
     ],
+  {
+    key: "yoga", emoji: "🧘‍♀️", name: "Yoga en la menopausia",
+    description: "Rutina personalizada de yoga para aliviar síntomas.",
+    articles: [
+      { title: "Por qué el yoga ayuda en esta etapa",
+        body: "Combina movimiento suave, respiración consciente y relajación. Reduce sofocos, mejora el ánimo, alivia dolores articulares y favorece un sueño más profundo." },
+      { title: "Rutina diaria de 15 minutos",
+        body: "1) Gato-vaca (1 min) para movilizar columna. 2) Postura del niño (2 min) para calmar el sistema nervioso. 3) Guerrero II (1 min por lado) para fortalecer piernas y caderas. 4) Torsión sentada (1 min por lado) para digestión. 5) Piernas en la pared (5 min) para circulación y descanso." },
+      { title: "Posturas específicas según síntoma",
+        body: "Sofocos: postura del cadáver con respiración fresca (sitali). Ansiedad: flexiones hacia delante suaves. Insomnio: piernas en la pared antes de dormir. Dolor lumbar: postura del puente con bloque." },
+    ],
+  },
+  {
+    key: "nutricion-edad", emoji: "🍎", name: "Nutrición personalizada para tu edad",
+    description: "Plan nutricional adaptado a tu etapa.",
+    articles: [
+      { title: "Tus necesidades cambian a partir de los 45",
+        body: "Disminuye el metabolismo basal y aumentan los requerimientos de calcio, vitamina D, magnesio y proteína. Comer menos no es la respuesta: comer mejor sí." },
+      { title: "Plato ideal en menopausia",
+        body: "½ del plato verduras de colores, ¼ proteína (pescado, huevo, legumbres, tofu), ¼ carbohidrato complejo (quinoa, avena, batata). Añade una grasa buena: aguacate, aceite de oliva o frutos secos." },
+      { title: "Nutrientes clave",
+        body: "Calcio (1200 mg/día): lácteos, sardinas, tahini, brócoli. Vitamina D: sol 15 min + suplemento si tu médica lo indica. Omega-3: pescado azul 2-3 veces por semana. Magnesio: semillas de calabaza, cacao, espinacas." },
+    ],
+  },
+  {
+    key: "ejercicio-sueno", emoji: "🏃‍♀️", name: "Ejercicio para mejorar tu sueño",
+    description: "Actividades que mejoran la calidad del sueño.",
+    articles: [
+      { title: "Cómo el movimiento te ayuda a dormir",
+        body: "El ejercicio regular regula el cortisol, aumenta la adenosina (presión de sueño) y mejora la temperatura corporal, facilitando dormirte más rápido y tener sueño más profundo." },
+      { title: "Mejores ejercicios y cuándo hacerlos",
+        body: "Mañana: caminata enérgica 30 min con luz solar para regular tu reloj biológico. Tarde: fuerza ligera o pilates 2-3 veces por semana. Evita ejercicio intenso después de las 19h: eleva cortisol y dificulta conciliar el sueño." },
+      { title: "Rutina relajante antes de dormir",
+        body: "Estiramientos suaves 10 min: postura del niño, torsión acostada, piernas en la pared. Combínalos con respiración 4-7-8 (inhala 4s, retén 7s, exhala 8s) para activar el sistema nervioso parasimpático." },
+    ],
+  },
+  {
+    key: "estres-ansiedad", emoji: "🌬️", name: "Manejo del estrés y ansiedad",
+    description: "Técnicas de relajación efectiva.",
+    articles: [
+      { title: "Por qué la menopausia amplifica la ansiedad",
+        body: "La caída del estrógeno reduce serotonina y GABA, neurotransmisores que calman. No es debilidad, es química. Tratarlo con técnicas concretas funciona." },
+      { title: "Respiración 4-7-8",
+        body: "Inhala 4 segundos por la nariz, retén 7 segundos, exhala 8 segundos por la boca. Repite 4 ciclos. Hazlo al despertar, antes de comidas y antes de dormir. Reduce ansiedad en minutos." },
+      { title: "Mindfulness en 5 minutos",
+        body: "Siéntate, cierra los ojos y nombra: 5 cosas que oyes, 4 que sientes en tu cuerpo, 3 emociones presentes, 2 pensamientos, 1 deseo. Te trae al presente y rompe el bucle ansioso." },
+      { title: "Hábitos antiestrés diarios",
+        body: "Camina en naturaleza 20 min/día, limita cafeína a antes de las 14h, escribe 3 cosas que agradeces antes de dormir, llama a una amiga 1 vez por semana. La conexión humana baja cortisol." },
+    ],
+  },
+  {
+    key: "intimidad", emoji: "💕", name: "Intimidad durante la menopausia",
+    description: "Consejos para mantener una vida íntima plena.",
+    articles: [
+      { title: "Cambios normales y cómo abordarlos",
+        body: "La sequedad vaginal, menos libido y molestias durante el sexo son comunes por la bajada de estrógenos. Tienen solución y hablar de ello con tu pareja y tu médica es el primer paso." },
+      { title: "Soluciones para la sequedad",
+        body: "Hidratantes vaginales sin hormonas (2-3 veces/semana). Lubricantes con base de agua o silicona durante las relaciones. Tu ginecóloga puede valorar terapia hormonal local en crema u óvulos: muy efectiva y segura." },
+      { title: "Recuperar el deseo",
+        body: "El deseo en esta etapa suele ser más reactivo que espontáneo: aparece con el contacto, no antes. Prioriza tiempo de calidad sin prisa, juegos previos largos y comunicación abierta con tu pareja." },
+      { title: "Suelo pélvico fuerte",
+        body: "Ejercicios de Kegel diarios mejoran sensaciones, lubricación natural y previenen incontinencia. Contrae como si retuvieras el pis durante 5 segundos, relaja 5 segundos. 10 repeticiones, 3 veces al día." },
+    ],
+  },
+  {
+    key: "sofocos", emoji: "🔥", name: "Sofocos: causas y soluciones",
+    description: "Entiende y controla los sofocos.",
+    articles: [
+      { title: "Qué son y por qué ocurren",
+        body: "El hipotálamo, tu termostato interno, se vuelve más sensible por la caída de estrógenos y dispara una respuesta de calor brusca. Duran 1-5 minutos y pueden ir acompañados de sudor, palpitaciones o ansiedad." },
+      { title: "Disparadores frecuentes a evitar",
+        body: "Alcohol (sobre todo vino tinto), cafeína, comidas picantes, azúcar, estrés agudo, ambientes calurosos y ropa sintética. Lleva un diario 2 semanas para detectar tus disparadores personales." },
+      { title: "Estrategias que funcionan",
+        body: "Vístete en capas con tejidos naturales (algodón, lino, bambú). Ten un ventilador y agua fría cerca. Respiración pausada al inicio del sofoco (inhala 5s, exhala 5s) acorta su duración. Practica yoga, meditación o tai chi: reducen frecuencia hasta un 50%." },
+      { title: "Aliados naturales y médicos",
+        body: "Fitoestrógenos suaves (soja fermentada, lino molido), salvia en infusión y magnesio pueden ayudar. Si los sofocos afectan tu calidad de vida, consulta sobre terapia hormonal: es segura para la mayoría de mujeres en los primeros años de menopausia." },
+    ],
   },
 ];
+
 
 function BibliotecaPage() {
   const [open, setOpen] = useState<Category | null>(null);
