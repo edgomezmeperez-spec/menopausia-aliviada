@@ -53,6 +53,60 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          birth_year: number | null
+          created_at: string
+          diet_notes: string | null
+          display_name: string | null
+          goals: string[]
+          last_reminder_sent_on: string | null
+          main_symptoms: string[]
+          onboarded_at: string | null
+          reminder_email: string | null
+          reminder_enabled: boolean
+          reminder_hour: number
+          stage: string | null
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          birth_year?: number | null
+          created_at?: string
+          diet_notes?: string | null
+          display_name?: string | null
+          goals?: string[]
+          last_reminder_sent_on?: string | null
+          main_symptoms?: string[]
+          onboarded_at?: string | null
+          reminder_email?: string | null
+          reminder_enabled?: boolean
+          reminder_hour?: number
+          stage?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          birth_year?: number | null
+          created_at?: string
+          diet_notes?: string | null
+          display_name?: string | null
+          goals?: string[]
+          last_reminder_sent_on?: string | null
+          main_symptoms?: string[]
+          onboarded_at?: string | null
+          reminder_email?: string | null
+          reminder_enabled?: boolean
+          reminder_hour?: number
+          stage?: string | null
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recommendation_followups: {
         Row: {
           created_at: string
