@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Flower2 } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({ meta: [{ title: "Acceder — Menopausia Sin Hinchazón" }] }),
   component: AuthPage,
 });
