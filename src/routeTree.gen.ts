@@ -13,12 +13,14 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedInicioRouteImport } from './routes/_authenticated/inicio'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
 import { Route as AuthenticatedConsultaRouteImport } from './routes/_authenticated/consulta'
 import { Route as AuthenticatedBibliotecaRouteImport } from './routes/_authenticated/biblioteca'
 import { Route as AuthenticatedAsistenteRouteImport } from './routes/_authenticated/asistente'
 import { Route as AuthenticatedAprendizajesRouteImport } from './routes/_authenticated/aprendizajes'
+import { Route as AuthenticatedAjustesRouteImport } from './routes/_authenticated/ajustes'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -37,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInicioRoute = AuthenticatedInicioRouteImport.update({
@@ -70,27 +77,36 @@ const AuthenticatedAprendizajesRoute =
     path: '/aprendizajes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAjustesRoute = AuthenticatedAjustesRouteImport.update({
+  id: '/ajustes',
+  path: '/ajustes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ajustes': typeof AuthenticatedAjustesRoute
   '/aprendizajes': typeof AuthenticatedAprendizajesRoute
   '/asistente': typeof AuthenticatedAsistenteRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/consulta': typeof AuthenticatedConsultaRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/plan': typeof AuthenticatedPlanRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ajustes': typeof AuthenticatedAjustesRoute
   '/aprendizajes': typeof AuthenticatedAprendizajesRoute
   '/asistente': typeof AuthenticatedAsistenteRoute
   '/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/consulta': typeof AuthenticatedConsultaRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/inicio': typeof AuthenticatedInicioRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/plan': typeof AuthenticatedPlanRoute
 }
 export interface FileRoutesById {
@@ -98,12 +114,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/ajustes': typeof AuthenticatedAjustesRoute
   '/_authenticated/aprendizajes': typeof AuthenticatedAprendizajesRoute
   '/_authenticated/asistente': typeof AuthenticatedAsistenteRoute
   '/_authenticated/biblioteca': typeof AuthenticatedBibliotecaRoute
   '/_authenticated/consulta': typeof AuthenticatedConsultaRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/_authenticated/inicio': typeof AuthenticatedInicioRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/plan': typeof AuthenticatedPlanRoute
 }
 export interface FileRouteTypes {
@@ -111,35 +129,41 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/ajustes'
     | '/aprendizajes'
     | '/asistente'
     | '/biblioteca'
     | '/consulta'
     | '/historial'
     | '/inicio'
+    | '/onboarding'
     | '/plan'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/ajustes'
     | '/aprendizajes'
     | '/asistente'
     | '/biblioteca'
     | '/consulta'
     | '/historial'
     | '/inicio'
+    | '/onboarding'
     | '/plan'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/ajustes'
     | '/_authenticated/aprendizajes'
     | '/_authenticated/asistente'
     | '/_authenticated/biblioteca'
     | '/_authenticated/consulta'
     | '/_authenticated/historial'
     | '/_authenticated/inicio'
+    | '/_authenticated/onboarding'
     | '/_authenticated/plan'
   fileRoutesById: FileRoutesById
 }
@@ -177,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/plan'
       fullPath: '/plan'
       preLoaderRoute: typeof AuthenticatedPlanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/inicio': {
@@ -221,26 +252,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAprendizajesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ajustes': {
+      id: '/_authenticated/ajustes'
+      path: '/ajustes'
+      fullPath: '/ajustes'
+      preLoaderRoute: typeof AuthenticatedAjustesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAjustesRoute: typeof AuthenticatedAjustesRoute
   AuthenticatedAprendizajesRoute: typeof AuthenticatedAprendizajesRoute
   AuthenticatedAsistenteRoute: typeof AuthenticatedAsistenteRoute
   AuthenticatedBibliotecaRoute: typeof AuthenticatedBibliotecaRoute
   AuthenticatedConsultaRoute: typeof AuthenticatedConsultaRoute
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedInicioRoute: typeof AuthenticatedInicioRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPlanRoute: typeof AuthenticatedPlanRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAjustesRoute: AuthenticatedAjustesRoute,
   AuthenticatedAprendizajesRoute: AuthenticatedAprendizajesRoute,
   AuthenticatedAsistenteRoute: AuthenticatedAsistenteRoute,
   AuthenticatedBibliotecaRoute: AuthenticatedBibliotecaRoute,
   AuthenticatedConsultaRoute: AuthenticatedConsultaRoute,
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedInicioRoute: AuthenticatedInicioRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPlanRoute: AuthenticatedPlanRoute,
 }
 
