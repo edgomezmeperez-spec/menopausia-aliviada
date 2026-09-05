@@ -9,7 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Flower2 } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Acceder — Menopausia Sin Hinchazón" }] }),
+  head: () => ({
+    meta: [
+      { title: "Controla tus síntomas de menopausia | Menopausia Sin Hinchazón" },
+      { name: "description", content: "Registra hinchazón, fatiga y despertares. Recibe consejos personalizados, plan de acción y prepara tus consultas médicas." },
+      { property: "og:title", content: "Controla tus síntomas de menopausia | Menopausia Sin Hinchazón" },
+      { property: "og:description", content: "Registra hinchazón, fatiga y despertares. Recibe consejos personalizados, plan de acción y prepara tus consultas médicas." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: AuthPage,
 });
 
