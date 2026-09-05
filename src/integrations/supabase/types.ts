@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string
+          doctor_name: string | null
+          doctor_notes: string | null
+          followed_up: boolean
+          id: string
+          location: string | null
+          reason: string | null
+          scheduled_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doctor_name?: string | null
+          doctor_notes?: string | null
+          followed_up?: boolean
+          id?: string
+          location?: string | null
+          reason?: string | null
+          scheduled_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doctor_name?: string | null
+          doctor_notes?: string | null
+          followed_up?: boolean
+          id?: string
+          location?: string | null
+          reason?: string | null
+          scheduled_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_entries: {
         Row: {
           bloating: number
