@@ -6,7 +6,9 @@ import { generarResumenConsulta } from "@/lib/ai.functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Stethoscope, FileText, Download, HelpCircle, AlertCircle } from "lucide-react";
+import { AppointmentsSection } from "@/components/AppointmentsSection";
 import jsPDF from "jspdf";
+
 
 export const Route = createFileRoute("/_authenticated/consulta")({
   component: ConsultaPage,
@@ -125,6 +127,8 @@ function ConsultaPage() {
         <h1 className="mt-1 font-display text-3xl font-semibold">Próxima consulta</h1>
       </header>
 
+      <AppointmentsSection />
+
       <Card className="rounded-3xl border-0 p-5 shadow-[var(--shadow-soft)]" style={{ background: "var(--gradient-warm)" }}>
         <div className="flex items-start gap-3">
           <div className="rounded-full bg-primary/10 p-2">
@@ -135,6 +139,7 @@ function ConsultaPage() {
           </div>
         </div>
       </Card>
+
 
       {stats && (
         <>

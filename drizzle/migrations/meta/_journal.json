@@ -8,6 +8,13 @@
       "when": 1788501386136,
       "tag": "0000_create_profiles_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788580540207,
+      "tag": "0001_create_appointments",
+      "breakpoints": true
     }
   ]
 }
